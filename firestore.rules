@@ -1,0 +1,79 @@
+// ===============================================================
+// Assumed Data Model
+// ===============================================================
+//
+// Collection: /users/{userId}
+// Document ID: {userId}
+// Fields:
+//   - uid: string (required)
+//   - email: string (required)
+//   - displayName: string
+//   - photoURL: string
+//   - createdAt: timestamp
+//
+// Collection: /users/{userId}/messages/{messageId}
+// Document ID: auto-generated
+// Fields:
+//   - text: string (required, max 10000 chars)
+//   - authorUid: string (required)
+//   - createdAt: timestamp (required)
+//   - deviceType: string (enum: pc, mobile, unknown)
+//
+// ===============================================================
+
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper Functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isValidUser(data) {
+      return data.keys().hasAll(['uid', 'email']) &&
+             data.uid is string &&
+             data.email is string &&
+             data.email.size() < 256;
+    }
+
+    function isValidMessage(data) {
+      return data.keys().hasAll(['text', 'authorUid', 'createdAt']) &&
+             data.text is string &&
+             data.text.size() <= 10000 &&
+             data.authorUid == request.auth.uid &&
+             data.createdAt is timestamp;
+    }
+
+    function isValidSettings(data) {
+      return data.bgType in ['default', 'image', 'video'] &&
+             (!('bgUrl' in data) || (data.bgUrl is string && data.bgUrl.size() < 2048));
+    }
+
+    // User Profile Rules
+    match /users/{userId} {
+      allow read: if isOwner(userId);
+      allow create: if isOwner(userId) && isValidUser(request.resource.data);
+      allow update: if isOwner(userId) && isValidUser(request.resource.data) && 
+                      request.resource.data.uid == resource.data.uid;
+    }
+
+    // Settings Rules
+    match /users/{userId}/settings/{settingId} {
+      allow read: if isOwner(userId);
+      allow write: if isOwner(userId) && isValidSettings(request.resource.data);
+    }
+
+    // Message Rules
+    match /users/{userId}/messages/{messageId} {
+      allow read: if isOwner(userId);
+      allow create: if isOwner(userId) && isValidMessage(request.resource.data);
+      allow update: if false; // Messages are immutable for simplicity
+      allow delete: if isOwner(userId);
+    }
+  }
+}

@@ -1,0 +1,52 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "User profile information.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "email": { "type": "string" },
+        "displayName": { "type": "string" },
+        "photoURL": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "email"]
+    },
+    "Message": {
+      "title": "Message",
+      "description": "A text message shared between devices.",
+      "type": "object",
+      "properties": {
+        "text": { "type": "string", "description": "The content of the message." },
+        "authorUid": { "type": "string", "description": "The UID of the user who sent the message." },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "deviceType": { "type": "string", "enum": ["pc", "mobile", "unknown"] }
+      },
+      "required": ["text", "authorUid", "createdAt"]
+    },
+    "Settings": {
+      "title": "Settings",
+      "description": "User application settings.",
+      "type": "object",
+      "properties": {
+        "bgType": { "type": "string", "enum": ["default", "image", "video"] },
+        "bgUrl": { "type": "string" }
+      }
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "User profile document."
+    },
+    "/users/{userId}/messages/{messageId}": {
+      "schema": "Message",
+      "description": "Messages sent by the user."
+    },
+    "/users/{userId}/settings/current": {
+      "schema": "Settings",
+      "description": "User's current settings."
+    }
+  }
+}

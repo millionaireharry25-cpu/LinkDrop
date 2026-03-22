@@ -1,0 +1,5 @@
+{
+  "name": "LinkDrop",
+  "description": "A minimalistic cross-device text sharing app. Send snippets from PC to phone and vice versa instantly.",
+  "requestFramePermissions": []
+}
